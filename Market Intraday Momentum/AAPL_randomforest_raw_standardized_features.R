@@ -102,6 +102,7 @@ roll_eem_sliding <-
 library(yardstick)
 
 rolling_evaluation_matrix <- function(split){
+  set.seed(1)
   analysis_set <- analysis(split) 
   model_rf <- caret::train(Y ~ .,
                            data = analysis_set,
@@ -113,133 +114,20 @@ rolling_evaluation_matrix <- function(split){
                       predict(model_rf, newdata = testSet, type = "prob"))
   final$predict <- ifelse(final$X0 > 0.5, 0, 1)
   cm_original <- confusionMatrix(as.factor(final$predict), testSet$Y)
-  
-  class <- cm_original$byClass
-  Accuracy = cm_original$overall[1]
-  Specificity = class["Specificity"]
-  Precision = class["Precision"]
-  Recall = class["Recall"]
-  F1 = class["F1"]
-  return(list(Accuracy,Specificity,Precision,Recall,F1))
+  return(cm_original)
 }
 
-test01 <-rolling_evaluation_matrix(roll_eem_sliding$splits[[1]])
-test02 <-rolling_evaluation_matrix(roll_eem_sliding$splits[[2]])
-test03 <-rolling_evaluation_matrix(roll_eem_sliding$splits[[3]])
-test04 <-rolling_evaluation_matrix(roll_eem_sliding$splits[[4]])
-################    under-sampling  #######################
-ctrl <- trainControl(method = "repeatedcv", 
-                     number = 10, 
-                     repeats = 10, 
-                     verboseIter = FALSE,
-                     sampling = "down")
-set.seed(1)
-model_rf_under <- caret::train( Y~ .,
-                                data = trainSet,
-                                method = "rf",
-                                preProcess = c("scale", "center"),
-                                trControl = ctrl)
-final_under <- data.frame(actual = testSet$Y,
-                          predict(model_rf_under, newdata = testSet, type = "prob"))
-final_under$predict <- ifelse(final_under$X0 > 0.5, 0, 1)
-cm_under <- confusionMatrix(as.factor(final_under$predict), testSet$Y)
+rollingset01 <- roll_eem_sliding$splits[[1]]
+rollingset02 <- roll_eem_sliding$splits[[2]]
+rollingset03 <- roll_eem_sliding$splits[[3]]
+rollingset04 <- roll_eem_sliding$splits[[4]]
+
+table(assessment(rollingset01)$Y)
 
 
-################## Over Sampling ##################
-
-ctrl <- trainControl(method = "repeatedcv", 
-                     number = 10, 
-                     repeats = 10, 
-                     verboseIter = FALSE,
-                     sampling = "up")
-set.seed(1)
-model_rf_over <- caret::train( Y~ .,
-                               data = trainSet,
-                               method = "rf",
-                               preProcess = c("scale", "center"),
-                               trControl = ctrl)
-final_over <- data.frame(actual = testSet$Y,
-                         predict(model_rf_over, newdata = testSet, type = "prob"))
-final_over$predict <- ifelse(final_over$X0 > 0.5, 0, 1)
-cm_over <- confusionMatrix(as.factor(final_over$predict), testSet$Y)
-
-
-################## Rose ##################
-
-ctrl <- trainControl(method = "repeatedcv", 
-                     number = 10, 
-                     repeats = 10, 
-                     verboseIter = FALSE,
-                     sampling = "rose")
-set.seed(1)
-model_rf_rose <- caret::train( Y~ .,
-                               data = trainSet,
-                               method = "rf",
-                               preProcess = c("scale", "center"),
-                               trControl = ctrl)
-final_rose <- data.frame(actual = testSet$Y,
-                         predict(model_rf_rose, newdata = testSet, type = "prob"))
-final_rose$predict <- ifelse(final_rose$X0 > 0.5, 0, 1)
-cm_rose <- confusionMatrix(as.factor(final_rose$predict), testSet$Y)
-
-
-
-################## smote ##################
-
-ctrl <- trainControl(method = "repeatedcv", 
-                     number = 10, 
-                     repeats = 10, 
-                     verboseIter = FALSE,
-                     sampling = "smote")
-set.seed(1)
-model_rf_smote <- caret::train( Y~ .,
-                                data = trainSet,
-                                method = "rf",
-                                preProcess = c("scale", "center"),
-                                trControl = ctrl)
-final_smote <- data.frame(actual = testSet$Y,
-                          predict(model_rf_smote, newdata = testSet, type = "prob"))
-final_smote$predict <- ifelse(final_smote$X0 > 0.5, 0, 1)
-cm_smote <- confusionMatrix(as.factor(final_smote$predict), testSet$Y)
-
-
-########### compare predictions ########
-
-models <- list(original = model_rf,
-               under = model_rf_under,
-               over = model_rf_over,
-               smote = model_rf_smote,
-               rose = model_rf_rose)
-resampling <- resamples(models)
-bwplot(resampling)
-
-library(dplyr)
-comparison <- data.frame(model = names(models),
-                         Specificity = rep(NA, length(models)),
-                         Precision = rep(NA, length(models)),
-                         Recall = rep(NA, length(models)),
-                         F1 = rep(NA, length(models)))
-
-
-for (name in names(models)) {
-  model <- get(paste0("cm_", name))
-  class<-model$byClass
-  comparison[comparison$model == name, ] <- filter(comparison, model == name) %>%
-    mutate(
-      Specificity = class["Specificity"],
-      Precision = class["Precision"],
-      Recall = class["Recall"],
-      F1 = class["F1"])
-}
-
-
-
-write.csv(comparison, "/Users/luzhang/Desktop/AAPL_features/comparsion_raw_standardized.csv")
-
-library(tidyr)
-comparison %>%
-  gather(x, y, Specificity:F1) %>%
-  ggplot(aes(x = x, y = y, color = model)) +
-  geom_jitter(width = 0.2, alpha = 0.5, size = 3)
+rolling01 <-rolling_evaluation_matrix(rollingset01)
+rolling02 <-rolling_evaluation_matrix(rollingset02)
+rolling03 <-rolling_evaluation_matrix(rollingset03)
+rolling04 <-rolling_evaluation_matrix(rollingset04)
 
 
