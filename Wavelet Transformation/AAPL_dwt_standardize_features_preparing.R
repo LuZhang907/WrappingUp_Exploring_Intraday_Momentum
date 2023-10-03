@@ -2,6 +2,14 @@
 ################## import APPL ###################
 
 library(tidyverse)
+library(WaveletComp)
+library(remotes)
+library(wmtsa)
+library(astsa)
+library(ggplot2)
+library(highfrequency)
+library(xts)
+library(TTR)
 
 # set work directory
 setwd("/Users/luzhang/Desktop/data/AAPL")
@@ -33,16 +41,7 @@ head(aapl)
 tail(aapl)
 length(aapl$time)
 
-#import packages
 
-library(WaveletComp)
-library(remotes)
-library(wmtsa)
-library(astsa)
-library(ggplot2)
-library(highfrequency)
-library(xts)
-library(TTR)
 
 Close<-aapl$close
 High<-aapl$high

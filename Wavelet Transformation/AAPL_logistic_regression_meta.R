@@ -11,7 +11,7 @@ library(rsample)
 # meta labeling logistic regression #
 
 #import the dwt features
-features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum/Data/AAPL_allSet_dwt_standardize.csv", header = T)
+features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum_2rd_try/Data/AAPL_allSet_dwt_standardize.csv", header = T)
 #head(dwt_features)
 #dim(dwt_features)
 #2622 57

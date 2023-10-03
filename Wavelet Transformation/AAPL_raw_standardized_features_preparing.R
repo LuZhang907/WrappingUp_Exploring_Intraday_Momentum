@@ -1,7 +1,14 @@
 ##################################################
 ################## import APPL ###################
-
+rm(list = setdiff(ls(), lsf.str()))
 library(tidyverse)
+library(remotes)
+library(astsa)
+library(ggplot2)
+library(highfrequency)
+library(xts)
+library(wmtsa)
+library(TTR)
 
 # set work directory
 setwd("/Users/luzhang/Desktop/data/AAPL")
@@ -35,12 +42,6 @@ length(aapl$time)
 
 ############  standardized raw features calculation ##########
 
-library(remotes)
-library(astsa)
-library(ggplot2)
-library(highfrequency)
-library(xts)
-
 Close<-aapl$close
 High<-aapl$high
 Low<-aapl$low
@@ -49,6 +50,8 @@ Volume<-aapl$volume
 
 prices<-xts(Close,aapl$time)
 day_index<-endpoints(prices, on = "days", k = 1)
+
+install.packages("/Users/luzhang/Downloads/wmtsa_2.0-3.tar.gz",repos=NULL, type='source')
 
 # last min prices for each trading day
 lmP<-prices[day_index,]
@@ -81,7 +84,7 @@ table(y_label)
 
 
 ##indicators calculation
-library(TTR)
+
 
 n<-length(day_index)-1
 start<-rep(0,n)

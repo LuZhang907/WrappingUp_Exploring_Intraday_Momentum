@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 *.svg
 Output Results/.DS_Store
+.Rproj.user
