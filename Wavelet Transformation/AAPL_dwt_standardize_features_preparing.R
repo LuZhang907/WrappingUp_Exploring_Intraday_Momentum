@@ -11,6 +11,9 @@ library(highfrequency)
 library(xts)
 library(TTR)
 
+install.packages("/Users/luzhang/Downloads/wmtsa_2.0-3.tar.gz",repos=NULL, type='source')
+install.packages("/Users/luzhang/Downloads/ifultools_2.0-4.tgz",repos=NULL, type='source')
+
 # set work directory
 setwd("/Users/luzhang/Desktop/data/AAPL")
 

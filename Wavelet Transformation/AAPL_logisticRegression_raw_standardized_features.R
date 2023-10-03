@@ -2,13 +2,12 @@
 ################# Logistic Regression #################
 
 rm(list = setdiff(ls(), lsf.str()))
-library(fmlr)
 library(quantmod)
-library(randomForestFML)
 library(ROCR)
 library(caret)
+library(ggcorrplot)
 
-features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum/Data/AAPL_allSet_raw_standardize.csv", header = T)
+features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum_2rd_try/Data/AAPL_allSet_raw_standardize.csv", header = T)
 head(features)
 dim(features)
 #2622 57
@@ -21,12 +20,21 @@ head(allSet)
 #exclude NA at the begining of the indicators
 idx_NA <- apply(allSet,1,function(x){sum(is.na(x))>0})
 allSet <- subset(allSet, !idx_NA)
+
+# correlation matrix
+#corr <- round(cor(allSet),1)
+#ggcorrplot(corr, method = "circle")
+
+
 allSet$Y<-as.factor(allSet$Y)
 dim(allSet)
 # 2622 56 
 table(allSet$Y)
 #0 1
 #1318 1304
+
+
+
 nx <- nrow(allSet)
 trainSet <- allSet[1:floor(nx*2/3),]
 testSet <- allSet[(floor(nx*2/3)+1):nx,]

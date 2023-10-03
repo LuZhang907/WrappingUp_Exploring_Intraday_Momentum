@@ -51,8 +51,6 @@ Volume<-aapl$volume
 prices<-xts(Close,aapl$time)
 day_index<-endpoints(prices, on = "days", k = 1)
 
-install.packages("/Users/luzhang/Downloads/wmtsa_2.0-3.tar.gz",repos=NULL, type='source')
-
 # last min prices for each trading day
 lmP<-prices[day_index,]
 #tail(lmP)

@@ -1,18 +1,18 @@
-
-################# Logistic Regression #################
+################# random forest #################
 
 rm(list = setdiff(ls(), lsf.str()))
 #library(fmlr)
 library(quantmod)
+library(TTR) # for various indicators
+library(randomForest)
 library(ROCR)
 library(caret)
-library(Metrics)
-
+library(varImp)
 
 features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum_2rd_try/Data/AAPL_allSet_dwt_standardize.csv", header = T)
 head(features)
 dim(features)
-#2622 57
+#2662 57
 features$X<-NULL
 
 
@@ -24,7 +24,7 @@ idx_NA <- apply(allSet,1,function(x){sum(is.na(x))>0})
 allSet <- subset(allSet, !idx_NA)
 allSet$Y<-as.factor(allSet$Y)
 dim(allSet)
-# 2622 56 
+# 2662 56
 table(allSet$Y)
 #0 1
 #1318 1304
@@ -32,32 +32,40 @@ nx <- nrow(allSet)
 trainSet <- allSet[1:floor(nx*2/3),]
 testSet <- allSet[(floor(nx*2/3)+1):nx,]
 dim(allSet); dim(trainSet); dim(testSet)
-#[1] 2622  56
+#[1] 2622   56
 #[1] 1748   56
 #[1] 874  56
 
 table(trainSet$Y)
-#0    1 
-#876 872
+#0   1 
+#876 872 
 table(testSet$Y)
 #0   1 
-#442 432
+#442 432 
 
-####original  random forest 
-
-#logist regression
-model_lr<-glm(Y~., family = binomial(link="logit"),data=trainSet)
-
-summary(model_lr)# 4 not defined because of singularities probably owing to there exists multicollinearity in here
-
-# remove covariates dwt_BBandsup dwt_DonchianChannelL, dwt_SMAClose, dwt_runSum
-model_lr<-glm(Y~.-dwt_BBandsup-dwt_DonchianChannelL-dwt_SMAClose-dwt_runSum , family = binomial(link="logit"),data=trainSet)
-
-probabs<-predict(model_lr,testSet,type="response")
-preds<-ifelse(probabs>0.5,1,0)
-cm_lr<-confusionMatrix(factor(preds), factor(testSet$Y))
+#### original  random forest 
+set.seed(1)
+control <- trainControl(method = "repeatedcv", number = 5, repeats = 2)
+metric <- "F1 score"
+mtry <- 25
+model_rf <- train(Y ~ .,
+                         data = trainSet,
+                         method = "rf",
+                         metric = metric,
+                         trControl = control)
 
 
+model_rf <- randomForest(Y~., data = trainSet, importance = TRUE)
+importance = importance(model_rf)
+varImpPlot(model_rf, n.var = 20, main = "")
+
+
+
+final <- data.frame(actual = testSet$Y,
+                    predict(model_rf, newdata = testSet, type = "prob"))
+final$predict <- ifelse(final$X0 > 0.5, 0, 1)
+cm_original <- confusionMatrix(as.factor(final$predict), testSet$Y)
+cm_original
 
 
 #################  rolling_origin ################
@@ -72,19 +80,18 @@ roll_eem_sliding <-
     cumulative = TRUE
   )
 
+#library(yardstick)
+
 rolling_evaluation_matrix <- function(split){
   set.seed(1)
   analysis_set <- analysis(split) 
-  model_lr<-glm(Y~.-dwt_BBandsup-dwt_DonchianChannelL-dwt_SMAClose-dwt_runSum , 
-                family = binomial(link="logit"),
-                data=analysis_set)
-  
+  model_rf <- randomForest(Y~., data = analysis_set, importance = TRUE)
   testSet = assessment(split)
-  probabs <- predict(model_lr,testSet,type="response")
-  preds <- ifelse(probabs>0.5,1,0)
-  preds <- as.numeric(preds) # remove index
-  cm_lr<-confusionMatrix(factor(preds), factor(testSet$Y))
-  return(cm_lr)
+  final <- data.frame(actual = testSet$Y,
+                      predict(model_rf, newdata = testSet, type = "prob"))
+  final$predict <- ifelse(final$X0 > 0.5, 0, 1)
+  cm_original <- confusionMatrix(as.factor(final$predict), testSet$Y)
+  return(cm_original)
 }
 
 rollingset01 <- roll_eem_sliding$splits[[1]]
@@ -99,5 +106,4 @@ rolling01 <-rolling_evaluation_matrix(rollingset01)
 rolling02 <-rolling_evaluation_matrix(rollingset02)
 rolling03 <-rolling_evaluation_matrix(rollingset03)
 rolling04 <-rolling_evaluation_matrix(rollingset04)
-
 

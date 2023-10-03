@@ -1,14 +1,13 @@
 ################# random forest #################
 
 rm(list = setdiff(ls(), lsf.str()))
-#library(fmlr)
 library(quantmod)
-library(TTR) # for various indicators
 library(randomForest)
 library(ROCR)
 library(caret)
+library(varImp)
 
-features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum_2rd_try/Data/AAPL_allSet_dwt_standardize.csv", header = T)
+features <- read.csv("/Users/luzhang/Documents/GitHub/WrappingUp_Exploring_Intraday_Momentum_2rd_try/Data/AAPL_allSet_raw_standardize.csv", header = T)
 head(features)
 dim(features)
 #2662 57
@@ -44,20 +43,27 @@ table(testSet$Y)
 
 #### original  random forest 
 set.seed(1)
-model_rf <- caret::train(Y ~ .,
-                         data = trainSet,
-                         method = "rf",
-                         preProcess = c("scale", "center"),
-                         trControl = trainControl(method = "repeatedcv", 
-                                                  number = 10, 
-                                                  repeats = 10, 
-                                                  verboseIter = FALSE))
+#control <- trainControl(method = "repeatedcv", number = 5, repeats = 2)
+#metric <- "F1 score"
+#mtry <- 25
+#model_rf <- train(Y ~ .,
+ #                        data = trainSet,
+ #                        method = "rf",
+#                         metric = metric,
+ #                        trControl = control)
+
+model_rf <- randomForest(Y~., data = trainSet, importance = TRUE)
+importance = importance(model_rf)
+varImpPlot(model_rf, n.var = 20, main = "")
+
+
+
 final <- data.frame(actual = testSet$Y,
                     predict(model_rf, newdata = testSet, type = "prob"))
 final$predict <- ifelse(final$X0 > 0.5, 0, 1)
 cm_original <- confusionMatrix(as.factor(final$predict), testSet$Y)
+cm_original
 
-            
 
 #################  rolling_origin ################
 library(rsample)
@@ -76,11 +82,7 @@ roll_eem_sliding <-
 rolling_evaluation_matrix <- function(split){
   set.seed(1)
   analysis_set <- analysis(split) 
-  model_rf <- caret::train(Y ~ .,
-                           data = analysis_set,
-                           method = "rf",
-                           preProcess = c("scale", "center")
-  )
+  model_rf <- randomForest(Y~., data = analysis_set, importance = TRUE)
   testSet = assessment(split)
   final <- data.frame(actual = testSet$Y,
                       predict(model_rf, newdata = testSet, type = "prob"))
