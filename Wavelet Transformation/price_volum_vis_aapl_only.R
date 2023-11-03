@@ -1,6 +1,7 @@
 rm(list = setdiff(ls(), lsf.str()))
 library(tidyverse)
 library(ggplot2)
+library(ggplot2)
 
 
 # set work directory
@@ -29,9 +30,19 @@ length(aapl$time)
 aapl$year <-  format(aapl$time, "%Y")
 aapl_table <- aapl %>% 
   group_by(year) %>%
-  summarise(avg_price = mean(open), std = sqrt(var(open)),
-            avg_volume = mean(volume))
+  summarise(avg_open = mean(open), avg_high = mean(high),avg_low = mean(low),
+            avg_close = mean(close), avg_volume = mean(volume))
 
 aapl_table <- data.frame(aapl_table)
 aapl_table
 
+ratio <- max(aapl_table$avg_volume)/max(aapl_table$avg_low)
+ggplot(aapl_table) +
+  geom_bar(aes(x=year, y=avg_volume),stat="identity", fill = "steelblue") +
+  geom_line(aes(x=year, y=avg_open*ratio),stat="identity", group = 1, color = "orange") +
+  geom_point(aes(x=year, y=avg_open*ratio)) +
+  geom_errorbar(aes(x=year, ymin=avg_high*ratio, ymax=avg_low*ratio), width=.1, colour="orange", 
+                position = position_dodge(0.05)) +
+  scale_y_continuous("Volume", sec.axis = sec_axis(~ . / ratio, name = "Price"))+
+  labs(x="", title = "AAPL")+
+  theme_bw()
